@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "kalkulacka",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-01",
+  "observability": { "enabled": true },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "aurry-kalkulacka",
+      "database_id": "6eb41f33-2b85-435b-b068-39f4db0331ae"
+    }
+  ],
+  "send_email": [
+    { "name": "EMAIL", "destination_address": "Info@aurry.cz" }
+  ]
+}
