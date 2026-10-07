@@ -14,15 +14,7 @@ export const PUBLIC_HTML = `<!doctype html>
 <header><div class="wrap"><div class="logo">Zlato Aurelius</div></div></header>
 <main><div class="wrap">
   <h1>Kalkulačka výkupu</h1>
-  <p class="lead">Spočítejte si orientační cenu za vaše zlato, stříbro nebo palladium.</p>
-
-  <div class="field">
-    <label>Typ výpočtu</label>
-    <div class="toggle">
-      <button id="mBuy" class="active" onclick="setMode('buy')">Výkup</button>
-      <button id="mPawn" onclick="setMode('pawn')">Zástava</button>
-    </div>
-  </div>
+  <p class="lead">Spočítejte si orientační cenu za vaše zlato nebo stříbro.</p>
 
   <div class="field">
     <label for="metal">Kov</label>
@@ -104,7 +96,7 @@ export const PUBLIC_HTML = `<!doctype html>
 </div></main>
 
 <script>
-let MODE = 'buy';
+const MODE = 'buy';
 let DATA = null;
 
 async function boot() {
@@ -120,13 +112,6 @@ function fillPurities() {
   const list = DATA.purities.filter(p => p.metal_code === code);
   const sel = document.getElementById('purity');
   sel.innerHTML = list.map(p => '<option value="' + p.purity + '">' + p.label + '</option>').join('');
-}
-
-function setMode(m) {
-  MODE = m;
-  document.getElementById('mBuy').classList.toggle('active', m === 'buy');
-  document.getElementById('mPawn').classList.toggle('active', m === 'pawn');
-  calc();
 }
 
 let timer;
@@ -165,7 +150,6 @@ async function doCalc() {
   document.getElementById('price').textContent = d.price.toLocaleString('cs-CZ') + ' Kč';
   document.getElementById('ctaBox').style.display = 'block';
   document.getElementById('detail').innerHTML =
-    row('Typ výpočtu', d.mode) +
     row('Kov', d.metal) +
     row('Ryzost', d.purity + ' / ' + d.karat + ' K') +
     row('Celková hmotnost', d.weight.toLocaleString('cs-CZ') + ' g') +
@@ -253,7 +237,7 @@ export const ADMIN_HTML = `<!doctype html>
 <body>
 <header><div class="wrap"><div class="logo">Zlato Aurelius — Administrace</div></div></header>
 <main><div class="wrap">
-  <h1>Ceny kovů</h1>
+  <h1>Výkupní ceny</h1>
   <p class="lead">Ceny jsou uvedené za gram při referenční ryzosti. Ostatní ryzosti se dopočítají automaticky.</p>
 
   <div class="field" id="keyField">
@@ -262,7 +246,7 @@ export const ADMIN_HTML = `<!doctype html>
   </div>
 
   <table>
-    <thead><tr><th>Kov</th><th>Ref. ryzost</th><th>Výkup Kč/g</th><th>Zástava Kč/g</th></tr></thead>
+    <thead><tr><th>Kov</th><th>Ref. ryzost</th><th>Výkup Kč/g</th></tr></thead>
     <tbody id="rows"></tbody>
   </table>
 
@@ -279,8 +263,7 @@ async function boot() {
   document.getElementById('rows').innerHTML = DATA.metals.map(m =>
     '<tr><td><strong>' + m.name + '</strong></td>' +
     '<td>' + m.ref_purity + '</td>' +
-    '<td><input type="number" step="0.01" min="0" id="buy_' + m.code + '" value="' + m.price_buy + '"></td>' +
-    '<td><input type="number" step="0.01" min="0" id="pawn_' + m.code + '" value="' + m.price_pawn + '"></td></tr>'
+    '<td><input type="number" step="0.01" min="0" id="buy_' + m.code + '" value="' + m.price_buy + '"></td></tr>'
   ).join('');
   const saved = sessionStorage.getItem('adminKey');
   if (saved) document.getElementById('adminKey').value = saved;
@@ -294,7 +277,7 @@ async function save() {
   const metals = DATA.metals.map(m => ({
     code: m.code,
     price_buy: document.getElementById('buy_' + m.code).value,
-    price_pawn: document.getElementById('pawn_' + m.code).value
+    price_pawn: m.price_pawn
   }));
 
   const res = await fetch('/api/admin/metals', {
