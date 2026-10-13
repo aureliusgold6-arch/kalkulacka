@@ -16,7 +16,7 @@ import {
 // Adresa odesílatele musí patřit doméně onboardované v Email Sending.
 const MAIL_FROM = 'noreply@aurry.cz';
 const MAIL_FROM_NAME = 'Zlato Aurelius';
-const MAIL_TO = 'info@aurry.cz';
+const MAIL_TO = 'nick.epif@gmail.com';
 
 // ---------------------------------------------------------------- DATA
 
