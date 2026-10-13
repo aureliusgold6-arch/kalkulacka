@@ -246,7 +246,7 @@ export const ADMIN_HTML = `<!doctype html>
 <style>${STYLES}</style>
 </head>
 <body>
-<header><div class="wrap"><div class="logo">Zlato Aurelius — Administrace</div></div></header>
+<header><div class="wrap"><div class="logo-row"><img class="logo-img" src="https://www.aurry.cz/user/documents/upload/Loga/WhiteandBlack.jpg" alt="Zlato Aurelius"><span class="logo-note">Administrace</span></div></div></header>
 <main><div class="wrap">
   <h1>Výkupní ceny</h1>
   <p class="lead">Ceny jsou uvedené za gram při referenční ryzosti. Ostatní ryzosti se dopočítají automaticky.</p>
