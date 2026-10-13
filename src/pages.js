@@ -1,4 +1,4 @@
-// Zlato Aurelius – HTML stránky
+// Zlato Aurry – HTML stránky
 
 import { STYLES } from './styles.js';
 
@@ -10,7 +10,7 @@ export const PUBLIC_HTML = `<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Kalkulačka výkupu zlata – Zlato Aurelius</title>
+<title>Kalkulačka výkupu zlata – Zlato Aurry</title>
 <style>${STYLES}
   .perGram { font-size: 14px; color: #555; margin-top: 10px; }
   .big { width: 100%; }
@@ -18,7 +18,7 @@ export const PUBLIC_HTML = `<!doctype html>
 </style>
 </head>
 <body>
-<header><div class="wrap"><a href="https://www.aurry.cz"><img class="logo-img" src="${LOGO_URL}" alt="Zlato Aurelius"></a></div></header>
+<header><div class="wrap"><a href="https://www.aurry.cz"><img class="logo-img" src="${LOGO_URL}" alt="AURRY"></a></div></header>
 <main><div class="wrap">
   <h1>Kalkulačka ceny výkupu zlata</h1>
   <p class="lead">Vyberte ryzost, zadejte hmotnost a stiskněte Vypočítat cenu.</p>
@@ -54,7 +54,7 @@ export const PUBLIC_HTML = `<!doctype html>
     <div class="detail" id="detail"></div>
   </div>
 
-  <p class="note" id="noteCalc">Jedná se o orientační kalkulaci. Konečná cena bude potvrzena společností Zlato Aurelius.</p>
+  <p class="note" id="noteCalc">Jedná se o orientační kalkulaci. Konečná cena bude potvrzena společností AURRY.</p>
 
   <div id="ctaBox" style="display:none;margin-top:28px">
     <button class="primary" onclick="openForm()">Mám zájem o výkup</button>
@@ -100,7 +100,7 @@ export const PUBLIC_HTML = `<!doctype html>
     <div class="result">
       <div style="font-size:21px;font-weight:600;margin-bottom:16px">Vaše žádost byla úspěšně odeslána.</div>
       <div class="detail" id="doneDetail"></div>
-      <p style="margin:20px 0 0;font-size:14px;color:#555">Zlato Aurelius vás bude kontaktovat.</p>
+      <p style="margin:20px 0 0;font-size:14px;color:#555">Tým AURRY vás bude kontaktovat.</p>
     </div>
   </div>
 </div></main>
@@ -242,11 +242,11 @@ export const ADMIN_HTML = `<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Nastavení cen – Zlato Aurelius</title>
+<title>Nastavení cen – Zlato AURRY</title>
 <style>${STYLES}</style>
 </head>
 <body>
-<header><div class="wrap"><div class="logo-row"><img class="logo-img" src="${LOGO_URL}" alt="Zlato Aurelius"><span class="logo-note">Administrace</span></div></div></header>
+<header><div class="wrap"><div class="logo-row"><img class="logo-img" src="${LOGO_URL}" alt="Zlato AURRY"><span class="logo-note">Administrace</span></div></div></header>
 <main><div class="wrap">
   <h1>Výkupní ceny</h1>
   <p class="lead">Ceny jsou uvedené za gram při referenční ryzosti. Ostatní ryzosti se dopočítají automaticky.</p>
