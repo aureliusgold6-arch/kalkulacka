@@ -12,6 +12,6 @@
     }
   ],
   "send_email": [
-    { "name": "EMAIL", "destination_address": "Info@aurry.cz" }
+    { "name": "EMAIL", "destination_address": "info@aurry.cz" }
   ]
 }
