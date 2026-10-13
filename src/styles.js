@@ -1,4 +1,4 @@
-// Zlato Aurelius – sdílené styly
+// Zlato Aurry – sdílené styly
 
 export const STYLES = `
   :root {
