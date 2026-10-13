@@ -11,9 +11,10 @@
       "database_id": "6eb41f33-2b85-435b-b068-39f4db0331ae"
     }
   ],
-    "send_email": [
+  "send_email": [
     {
       "name": "EMAIL",
       "allowed_destination_addresses": ["info@aurry.cz", "nick.epif@gmail.com"]
     }
   ]
+}
