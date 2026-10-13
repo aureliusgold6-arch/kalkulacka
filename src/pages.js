@@ -2,56 +2,65 @@
 
 import { STYLES } from './styles.js';
 
+const GDPR_URL = 'https://www.aurry.cz/podminky-ochrany-osobnich-udaju/';
+
 export const PUBLIC_HTML = `<!doctype html>
 <html lang="cs">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Kalkulačka výkupu – Zlato Aurelius</title>
-<style>${STYLES}</style>
+<title>Kalkulačka výkupu zlata – Zlato Aurelius</title>
+<style>${STYLES}
+  .perGram { font-size: 14px; color: #555; margin-top: 10px; }
+  .big { width: 100%; }
+  .gdpr a { color: var(--green); }
+</style>
 </head>
 <body>
 <header><div class="wrap"><div class="logo">Zlato Aurelius</div></div></header>
 <main><div class="wrap">
-  <h1>Kalkulačka výkupu</h1>
-  <p class="lead">Spočítejte si orientační cenu za vaše zlato nebo stříbro.</p>
+  <h1>Kalkulačka ceny výkupu zlata</h1>
+  <p class="lead">Vyberte ryzost, zadejte hmotnost a stiskněte Vypočítat cenu.</p>
 
   <div class="field">
     <label for="metal">Kov</label>
-    <select id="metal" onchange="fillPurities(); calc()"></select>
+    <select id="metal" onchange="fillPurities(); reset()"></select>
   </div>
 
   <div class="field">
     <label for="purity">Ryzost</label>
-    <select id="purity" onchange="calc()"></select>
+    <select id="purity" onchange="reset()"></select>
   </div>
 
   <div class="row">
     <div class="field">
       <label for="weight">Hmotnost (g)</label>
-      <input id="weight" type="number" step="0.01" min="0" inputmode="decimal" placeholder="0,00" oninput="calc()">
+      <input id="weight" type="number" step="0.01" min="0" inputmode="decimal" placeholder="0,00" oninput="reset()">
     </div>
     <div class="field">
       <label for="pieces">Počet kusů</label>
-      <input id="pieces" type="number" step="1" min="1" value="1" oninput="calc()">
+      <input id="pieces" type="number" step="1" min="1" value="1" oninput="reset()">
     </div>
   </div>
+
+  <button class="primary big" id="calcBtn" onclick="doCalc()">Vypočítat cenu</button>
 
   <div id="err" class="err"></div>
 
   <div class="result" id="result" style="display:none">
-    <div class="price" id="price">—</div>
+    <div class="price" id="price">0 Kč</div>
+    <div class="perGram" id="perGram"></div>
     <div class="detail" id="detail"></div>
   </div>
 
   <p class="note" id="noteCalc">Jedná se o orientační kalkulaci. Konečná cena bude potvrzena společností Zlato Aurelius.</p>
 
   <div id="ctaBox" style="display:none;margin-top:28px">
-    <button class="primary" onclick="openForm()">Nezávazně poptat</button>
+    <button class="primary" onclick="openForm()">Mám zájem o výkup</button>
   </div>
 
   <div id="formBox" style="display:none;margin-top:36px;border-top:1px solid var(--border);padding-top:32px">
-    <h2 style="font-size:21px;margin:0 0 6px">Vaše kontaktní údaje</h2>
+    <h2 style="font-size:21px;margin:0 0 6px">Nezávazná žádost o výkup</h2>
     <p class="lead" style="margin-bottom:26px">Ozveme se vám a potvrdíme konečnou cenu.</p>
 
     <div class="field">
@@ -77,18 +86,18 @@ export const PUBLIC_HTML = `<!doctype html>
       <input id="website" type="text" tabindex="-1" autocomplete="off">
     </div>
 
-    <label style="display:flex;gap:10px;align-items:flex-start;text-transform:none;letter-spacing:0;font-weight:400;font-size:14px;color:#555;margin:6px 0 24px">
+    <label class="gdpr" style="display:flex;gap:10px;align-items:flex-start;text-transform:none;letter-spacing:0;font-weight:400;font-size:14px;color:#555;margin:6px 0 24px">
       <input id="cAgree" type="checkbox" style="width:auto;margin-top:3px">
-      <span>Souhlasím se zpracováním uvedených údajů za účelem vyřízení této poptávky.</span>
+      <span>Potvrzuji, že jsem se seznámil(a) se <a href="${GDPR_URL}" target="_blank" rel="noopener">zásadami ochrany osobních údajů</a>.</span>
     </label>
 
-    <button class="primary" id="sendBtn" onclick="sendPreorder()">Odeslat poptávku</button>
+    <button class="primary" id="sendBtn" onclick="sendPreorder()">Odeslat žádost</button>
     <div id="formErr" class="err"></div>
   </div>
 
   <div id="doneBox" style="display:none;margin-top:36px">
     <div class="result">
-      <div style="font-size:21px;font-weight:600;margin-bottom:16px">Vaše předobjednávka byla úspěšně odeslána.</div>
+      <div style="font-size:21px;font-weight:600;margin-bottom:16px">Vaše žádost byla úspěšně odeslána.</div>
       <div class="detail" id="doneDetail"></div>
       <p style="margin:20px 0 0;font-size:14px;color:#555">Zlato Aurelius vás bude kontaktovat.</p>
     </div>
@@ -114,10 +123,10 @@ function fillPurities() {
   sel.innerHTML = list.map(p => '<option value="' + p.purity + '">' + p.label + '</option>').join('');
 }
 
-let timer;
-function calc() {
-  clearTimeout(timer);
-  timer = setTimeout(doCalc, 180);
+function reset() {
+  document.getElementById('result').style.display = 'none';
+  document.getElementById('ctaBox').style.display = 'none';
+  document.getElementById('err').textContent = '';
 }
 
 async function doCalc() {
@@ -127,8 +136,8 @@ async function doCalc() {
   errEl.textContent = '';
 
   if (!weight || Number(weight) <= 0) {
+    errEl.textContent = 'Zadejte prosím hmotnost.';
     resEl.style.display = 'none';
-    document.getElementById('ctaBox').style.display = 'none';
     return;
   }
 
@@ -148,14 +157,15 @@ async function doCalc() {
   if (!res.ok) { errEl.textContent = d.error || 'Chyba výpočtu'; resEl.style.display = 'none'; return; }
 
   document.getElementById('price').textContent = d.price.toLocaleString('cs-CZ') + ' Kč';
-  document.getElementById('ctaBox').style.display = 'block';
+  document.getElementById('perGram').textContent =
+    'Cena 1 g / ' + d.pricePerGram.toLocaleString('cs-CZ') + ' Kč';
   document.getElementById('detail').innerHTML =
     row('Kov', d.metal) +
-    row('Ryzost', d.purity + ' / ' + d.karat + ' K') +
+    row('Ryzost', d.purity) +
     row('Celková hmotnost', d.weight.toLocaleString('cs-CZ') + ' g') +
-    row('Ryzí kov', d.pureWeight.toLocaleString('cs-CZ') + ' g') +
-    row('Cena za gram', d.pricePerGram.toLocaleString('cs-CZ') + ' Kč');
+    row('Ryzí kov', d.pureWeight.toLocaleString('cs-CZ') + ' g');
   resEl.style.display = 'block';
+  document.getElementById('ctaBox').style.display = 'block';
 }
 
 function row(a, b) { return '<div><span>' + a + '</span><strong>' + b + '</strong></div>'; }
@@ -172,7 +182,7 @@ async function sendPreorder() {
   err.textContent = '';
 
   if (!document.getElementById('cAgree').checked) {
-    err.textContent = 'Potvrďte prosím souhlas se zpracováním údajů.';
+    err.textContent = 'Potvrďte prosím seznámení se zásadami ochrany osobních údajů.';
     return;
   }
 
@@ -201,7 +211,7 @@ async function sendPreorder() {
     if (!res.ok) {
       err.textContent = d.error || 'Odeslání se nezdařilo.';
       btn.disabled = false;
-      btn.textContent = 'Odeslat poptávku';
+      btn.textContent = 'Odeslat žádost';
       return;
     }
 
@@ -209,7 +219,7 @@ async function sendPreorder() {
     document.getElementById('result').style.display = 'none';
     document.getElementById('noteCalc').style.display = 'none';
     document.getElementById('doneDetail').innerHTML =
-      row('Číslo předobjednávky', d.ref) +
+      row('Číslo žádosti', d.ref) +
       row('Datum', d.created_at) +
       row('Orientační cena', d.price.toLocaleString('cs-CZ') + ' Kč');
     document.getElementById('doneBox').style.display = 'block';
@@ -217,7 +227,7 @@ async function sendPreorder() {
   } catch (e) {
     err.textContent = 'Odeslání se nezdařilo. Zkuste to prosím znovu.';
     btn.disabled = false;
-    btn.textContent = 'Odeslat poptávku';
+    btn.textContent = 'Odeslat žádost';
   }
 }
 
