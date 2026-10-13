@@ -27,16 +27,14 @@ export const STYLES = `
     text-transform: uppercase;
     font-weight: 600;
     color: var(--green);
-      .logo-img { height: 44px; width: auto; display: block; }
+  }
+  .logo-img { height: 44px; width: auto; display: block; }
   .logo-row { display: flex; align-items: center; gap: 16px; }
   .logo-note {
     font-size: 12px;
     letter-spacing: 0.18em;
     text-transform: uppercase;
     color: #777;
-  }
-  @media (max-width: 560px) {
-    .logo-img { height: 34px; }
   }
   h1 { font-size: 30px; font-weight: 600; margin: 40px 0 8px; letter-spacing: -0.01em; }
   .lead { color: #555; margin: 0 0 36px; }
@@ -110,5 +108,6 @@ export const STYLES = `
     .row { grid-template-columns: 1fr; }
     h1 { font-size: 25px; }
     .price { font-size: 34px; }
+    .logo-img { height: 34px; }
   }
 `;
