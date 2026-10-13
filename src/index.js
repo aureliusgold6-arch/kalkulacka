@@ -1,364 +1,309 @@
-/**
- * Zlato Aurelius – kalkulačka výkupu kovů
- *
- * Výpočetní logika převzatá z Excelu, viz EXCEL_LOGIC.md
- */
+// Zlato Aurelius – HTML stránky
 
-import { EmailMessage } from 'cloudflare:email';
-import { PUBLIC_HTML, ADMIN_HTML } from './pages.js';
-import {
-  calculateItemPrice,
-  calculatePureWeight,
-  millesimalToKarat,
-  roundPrice,
-} from './calculations.js';
+import { STYLES } from './styles.js';
 
-// Adresa odesílatele musí patřit doméně onboardované v Email Sending.
-const MAIL_FROM = 'noreply@aurry.cz';
-const MAIL_FROM_NAME = 'Zlato Aurelius';
-const MAIL_TO = 'info@aurry.cz';
+const GDPR_URL = 'https://www.aurry.cz/podminky-ochrany-osobnich-udaju/';
+const LOGO_URL = 'https://www.aurry.cz/user/documents/upload/Loga/WhiteandBlack.jpg';
 
-// ---------------------------------------------------------------- DATA
+export const PUBLIC_HTML = `<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kalkulačka výkupu zlata – Zlato Aurelius</title>
+<style>${STYLES}
+  .perGram { font-size: 14px; color: #555; margin-top: 10px; }
+  .big { width: 100%; }
+  .gdpr a { color: var(--green); }
+</style>
+</head>
+<body>
+<header><div class="wrap"><a href="https://www.aurry.cz"><img class="logo-img" src="${LOGO_URL}" alt="Zlato Aurelius"></a></div></header>
+<main><div class="wrap">
+  <h1>Kalkulačka ceny výkupu zlata</h1>
+  <p class="lead">Vyberte ryzost, zadejte hmotnost a stiskněte Vypočítat cenu.</p>
 
-async function loadPricing(db) {
-  const metals = await db.prepare(
-    'SELECT code, name, ref_purity, price_buy, price_pawn FROM metals ORDER BY sort_order'
-  ).all();
+  <div class="field">
+    <label for="metal">Kov</label>
+    <select id="metal" onchange="fillPurities(); reset()"></select>
+  </div>
 
-  const purities = await db.prepare(
-    'SELECT metal_code, purity, label FROM purities ORDER BY metal_code, sort_order'
-  ).all();
+  <div class="field">
+    <label for="purity">Ryzost</label>
+    <select id="purity" onchange="reset()"></select>
+  </div>
 
-  const settings = await db.prepare('SELECT key, value FROM settings').all();
+  <div class="row">
+    <div class="field">
+      <label for="weight">Hmotnost (g)</label>
+      <input id="weight" type="number" step="0.01" min="0" inputmode="decimal" placeholder="0,00" oninput="reset()">
+    </div>
+    <div class="field">
+      <label for="pieces">Počet kusů</label>
+      <input id="pieces" type="number" step="1" min="1" value="1" oninput="reset()">
+    </div>
+  </div>
 
-  const settingsMap = {};
-  for (const row of settings.results) settingsMap[row.key] = row.value;
+  <button class="primary big" id="calcBtn" onclick="doCalc()">Vypočítat cenu</button>
 
-  return {
-    metals: metals.results,
-    purities: purities.results,
-    settings: settingsMap,
-  };
+  <div id="err" class="err"></div>
+
+  <div class="result" id="result" style="display:none">
+    <div class="price" id="price">0 Kč</div>
+    <div class="perGram" id="perGram"></div>
+    <div class="detail" id="detail"></div>
+  </div>
+
+  <p class="note" id="noteCalc">Jedná se o orientační kalkulaci. Konečná cena bude potvrzena společností Zlato Aurelius.</p>
+
+  <div id="ctaBox" style="display:none;margin-top:28px">
+    <button class="primary" onclick="openForm()">Mám zájem o výkup</button>
+  </div>
+
+  <div id="formBox" style="display:none;margin-top:36px;border-top:1px solid var(--border);padding-top:32px">
+    <h2 style="font-size:21px;margin:0 0 6px">Nezávazná žádost o výkup</h2>
+    <p class="lead" style="margin-bottom:26px">Ozveme se vám a potvrdíme konečnou cenu.</p>
+
+    <div class="field">
+      <label for="cName">Jméno a příjmení</label>
+      <input id="cName" type="text" autocomplete="name">
+    </div>
+    <div class="row">
+      <div class="field">
+        <label for="cPhone">Telefon</label>
+        <input id="cPhone" type="tel" autocomplete="tel" placeholder="+420">
+      </div>
+      <div class="field">
+        <label for="cEmail">E-mail</label>
+        <input id="cEmail" type="email" autocomplete="email">
+      </div>
+    </div>
+    <div class="field">
+      <label for="cNote">Poznámka (nepovinné)</label>
+      <input id="cNote" type="text" placeholder="Např. popis předmětu">
+    </div>
+
+    <div style="position:absolute;left:-9999px" aria-hidden="true">
+      <input id="website" type="text" tabindex="-1" autocomplete="off">
+    </div>
+
+    <label class="gdpr" style="display:flex;gap:10px;align-items:flex-start;text-transform:none;letter-spacing:0;font-weight:400;font-size:14px;color:#555;margin:6px 0 24px">
+      <input id="cAgree" type="checkbox" style="width:auto;margin-top:3px">
+      <span>Potvrzuji, že jsem se seznámil(a) se <a href="${GDPR_URL}" target="_blank" rel="noopener">zásadami ochrany osobních údajů</a>.</span>
+    </label>
+
+    <button class="primary" id="sendBtn" onclick="sendPreorder()">Odeslat žádost</button>
+    <div id="formErr" class="err"></div>
+  </div>
+
+  <div id="doneBox" style="display:none;margin-top:36px">
+    <div class="result">
+      <div style="font-size:21px;font-weight:600;margin-bottom:16px">Vaše žádost byla úspěšně odeslána.</div>
+      <div class="detail" id="doneDetail"></div>
+      <p style="margin:20px 0 0;font-size:14px;color:#555">Zlato Aurelius vás bude kontaktovat.</p>
+    </div>
+  </div>
+</div></main>
+
+<script>
+const MODE = 'buy';
+let DATA = null;
+
+async function boot() {
+  const res = await fetch('/api/pricing');
+  DATA = await res.json();
+  const sel = document.getElementById('metal');
+  sel.innerHTML = DATA.metals.map(m => '<option value="' + m.code + '">' + m.name + '</option>').join('');
+  fillPurities();
 }
 
-// ---------------------------------------------------------------- API
-
-function json(data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { 'content-type': 'application/json; charset=utf-8' },
-  });
+function fillPurities() {
+  const code = document.getElementById('metal').value;
+  const list = DATA.purities.filter(p => p.metal_code === code);
+  const sel = document.getElementById('purity');
+  sel.innerHTML = list.map(p => '<option value="' + p.purity + '">' + p.label + '</option>').join('');
 }
 
-function isAdmin(request, env) {
-  if (request.headers.get('cf-access-authenticated-user-email')) return true;
-  const key = request.headers.get('x-admin-key');
-  return Boolean(env.ADMIN_KEY) && key === env.ADMIN_KEY;
+function reset() {
+  document.getElementById('result').style.display = 'none';
+  document.getElementById('ctaBox').style.display = 'none';
+  document.getElementById('err').textContent = '';
 }
 
-async function handleCalculate(request, env) {
-  let body;
-  try {
-    body = await request.json();
-  } catch {
-    return json({ error: 'Neplatný požadavek' }, 400);
+async function doCalc() {
+  const weight = document.getElementById('weight').value;
+  const errEl = document.getElementById('err');
+  const resEl = document.getElementById('result');
+  errEl.textContent = '';
+
+  if (!weight || Number(weight) <= 0) {
+    errEl.textContent = 'Zadejte prosím hmotnost.';
+    resEl.style.display = 'none';
+    return;
   }
 
-  const { metal, purity, weight, pieces, mode } = body;
-
-  const pricing = await loadPricing(env.DB);
-  const m = pricing.metals.find((x) => x.code === metal);
-  if (!m) return json({ error: 'Neznámý kov' }, 400);
-
-  const w = Number(weight);
-  const p = Number(purity);
-  const n = Math.max(1, Math.floor(Number(pieces) || 1));
-
-  if (!Number.isFinite(w) || w <= 0) return json({ error: 'Zadejte kladnou hmotnost' }, 400);
-  if (!Number.isFinite(p) || p <= 0 || p > 1000) return json({ error: 'Neplatná ryzost' }, 400);
-
-  const refPrice = mode === 'pawn' ? m.price_pawn : m.price_buy;
-  const totalWeight = w * n;
-
-  const raw = calculateItemPrice(refPrice, m.ref_purity, p, totalWeight);
-  const step = Number(pricing.settings.rounding || 1);
-
-  return json({
-    metal: m.name,
-    mode: mode === 'pawn' ? 'Zástava' : 'Výkup',
-    weight: totalWeight,
-    purity: p,
-    pureWeight: Number(calculatePureWeight(p, totalWeight).toFixed(4)),
-    karat: Number(millesimalToKarat(p).toFixed(1)),
-    pricePerGram: Number((refPrice / m.ref_purity * p).toFixed(2)),
-    priceRaw: Number(raw.toFixed(2)),
-    price: roundPrice(raw, step),
+  const res = await fetch('/api/calculate', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      metal: document.getElementById('metal').value,
+      purity: document.getElementById('purity').value,
+      weight: weight,
+      pieces: document.getElementById('pieces').value,
+      mode: MODE
+    })
   });
+
+  const d = await res.json();
+  if (!res.ok) { errEl.textContent = d.error || 'Chyba výpočtu'; resEl.style.display = 'none'; return; }
+
+  document.getElementById('price').textContent = d.price.toLocaleString('cs-CZ') + ' Kč';
+  document.getElementById('perGram').textContent =
+    'Cena 1 g / ' + d.pricePerGram.toLocaleString('cs-CZ') + ' Kč';
+  document.getElementById('detail').innerHTML =
+    row('Kov', d.metal) +
+    row('Ryzost', d.purity) +
+    row('Celková hmotnost', d.weight.toLocaleString('cs-CZ') + ' g') +
+    row('Ryzí kov', d.pureWeight.toLocaleString('cs-CZ') + ' g');
+  resEl.style.display = 'block';
+  document.getElementById('ctaBox').style.display = 'block';
 }
 
-// ---------------------------------------------------------------- E-MAIL
+function row(a, b) { return '<div><span>' + a + '</span><strong>' + b + '</strong></div>'; }
 
-function b64(str) {
-  const bytes = new TextEncoder().encode(str);
-  let bin = '';
-  for (const b of bytes) bin += String.fromCharCode(b);
-  return btoa(bin);
+function openForm() {
+  document.getElementById('ctaBox').style.display = 'none';
+  document.getElementById('formBox').style.display = 'block';
+  document.getElementById('cName').focus();
 }
 
-function b64Wrapped(str) {
-  return (b64(str).match(/.{1,76}/g) || []).join('\r\n');
+async function sendPreorder() {
+  const err = document.getElementById('formErr');
+  const btn = document.getElementById('sendBtn');
+  err.textContent = '';
+
+  if (!document.getElementById('cAgree').checked) {
+    err.textContent = 'Potvrďte prosím seznámení se zásadami ochrany osobních údajů.';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Odesílám…';
+
+  try {
+    const res = await fetch('/api/preorder', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        name: document.getElementById('cName').value,
+        phone: document.getElementById('cPhone').value,
+        email: document.getElementById('cEmail').value,
+        note: document.getElementById('cNote').value,
+        website: document.getElementById('website').value,
+        metal: document.getElementById('metal').value,
+        purity: document.getElementById('purity').value,
+        weight: document.getElementById('weight').value,
+        pieces: document.getElementById('pieces').value,
+        mode: MODE
+      })
+    });
+
+    const d = await res.json();
+    if (!res.ok) {
+      err.textContent = d.error || 'Odeslání se nezdařilo.';
+      btn.disabled = false;
+      btn.textContent = 'Odeslat žádost';
+      return;
+    }
+
+    document.getElementById('formBox').style.display = 'none';
+    document.getElementById('result').style.display = 'none';
+    document.getElementById('noteCalc').style.display = 'none';
+    document.getElementById('doneDetail').innerHTML =
+      row('Číslo žádosti', d.ref) +
+      row('Datum', d.created_at) +
+      row('Orientační cena', d.price.toLocaleString('cs-CZ') + ' Kč');
+    document.getElementById('doneBox').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch (e) {
+    err.textContent = 'Odeslání se nezdařilo. Zkuste to prosím znovu.';
+    btn.disabled = false;
+    btn.textContent = 'Odeslat žádost';
+  }
 }
 
-function encodeHeader(str) {
-  return /^[\x20-\x7E]*$/.test(str) ? str : `=?UTF-8?B?${b64(str)}?=`;
-}
+boot();
+</script>
+</body>
+</html>`;
 
-function escapeHtml(s) {
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
+export const ADMIN_HTML = `<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nastavení cen – Zlato Aurelius</title>
+<style>${STYLES}</style>
+</head>
+<body>
+<header><div class="wrap"><div class="logo-row"><img class="logo-img" src="${LOGO_URL}" alt="Zlato Aurelius"><span class="logo-note">Administrace</span></div></div></header>
+<main><div class="wrap">
+  <h1>Výkupní ceny</h1>
+  <p class="lead">Ceny jsou uvedené za gram při referenční ryzosti. Ostatní ryzosti se dopočítají automaticky.</p>
 
-function buildEmailBody(p) {
-  const row = (k, v) =>
-    `<tr><td style="padding:9px 0;border-bottom:1px solid #e2e2de;color:#555;font-size:14px">${k}</td>` +
-    `<td style="padding:9px 0;border-bottom:1px solid #e2e2de;text-align:right;font-weight:600;font-size:14px">${escapeHtml(String(v))}</td></tr>`;
+  <div class="field" id="keyField">
+    <label for="adminKey">Administrátorský klíč</label>
+    <input id="adminKey" type="password" placeholder="Vložte klíč" autocomplete="current-password">
+  </div>
 
-  return `<!doctype html><html><body style="margin:0;padding:24px;background:#ffffff;font-family:Helvetica,Arial,sans-serif;color:#000">
-<div style="max-width:560px;margin:0 auto">
-  <div style="font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:#006039;font-weight:bold">Zlato Aurelius</div>
-  <h1 style="font-size:22px;margin:16px 0 4px">Nová předobjednávka</h1>
-  <div style="color:#666;font-size:14px;margin-bottom:24px">${escapeHtml(p.ref)} &middot; ${escapeHtml(p.created_at)}</div>
-
-  <table style="width:100%;border-collapse:collapse;border-top:3px solid #006039">
-    ${row('Jméno', p.name)}
-    ${row('Telefon', p.phone)}
-    ${row('E-mail', p.email || '—')}
-    ${row('Typ', p.mode === 'pawn' ? 'Zástava' : 'Výkup')}
-    ${row('Kov', p.metal_name)}
-    ${row('Ryzost', p.purity)}
-    ${row('Hmotnost', p.weight + ' g')}
-    ${row('Počet kusů', p.pieces)}
-    ${row('Cena za gram', p.price_per_gram + ' Kč')}
+  <table>
+    <thead><tr><th>Kov</th><th>Ref. ryzost</th><th>Výkup Kč/g</th></tr></thead>
+    <tbody id="rows"></tbody>
   </table>
 
-  <div style="margin-top:22px;padding:18px;background:#f4f4f2;border-left:3px solid #006039">
-    <div style="font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#555">Orientační cena</div>
-    <div style="font-size:30px;font-weight:bold;color:#006039;margin-top:4px">${escapeHtml(String(p.price))} Kč</div>
-  </div>
+  <button class="primary" onclick="save()">Uložit ceny</button>
+  <div id="msg" class="detail" style="margin-top:18px"></div>
+</div></main>
 
-  ${p.note ? `<div style="margin-top:22px"><div style="font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#555;margin-bottom:6px">Poznámka</div><div style="font-size:14px">${escapeHtml(p.note)}</div></div>` : ''}
+<script>
+let DATA = null;
 
-  <div style="margin-top:34px;padding-top:16px;border-top:1px solid #e2e2de;color:#777;font-size:12px">
-    Jedná se o zákaznickou předobjednávku vytvořenou prostřednictvím webové aplikace Zlato Aurelius.
-  </div>
-</div>
-</body></html>`;
+async function boot() {
+  const res = await fetch('/api/pricing');
+  DATA = await res.json();
+  document.getElementById('rows').innerHTML = DATA.metals.map(m =>
+    '<tr><td><strong>' + m.name + '</strong></td>' +
+    '<td>' + m.ref_purity + '</td>' +
+    '<td><input type="number" step="0.01" min="0" id="buy_' + m.code + '" value="' + m.price_buy + '"></td></tr>'
+  ).join('');
+  const saved = sessionStorage.getItem('adminKey');
+  if (saved) document.getElementById('adminKey').value = saved;
 }
 
-async function sendPreorderEmail(env, p) {
-  if (!env.EMAIL) throw new Error('Binding EMAIL není nastavený');
+async function save() {
+  const key = document.getElementById('adminKey').value;
+  sessionStorage.setItem('adminKey', key);
+  const msg = document.getElementById('msg');
 
-  const subject = `Nová předobjednávka – Zlato Aurelius – ${p.metal_name} ${p.ref}`;
-  const headers = [
-    `From: ${encodeHeader(MAIL_FROM_NAME)} <${MAIL_FROM}>`,
-    `To: ${MAIL_TO}`,
-    p.email ? `Reply-To: ${p.email}` : null,
-    `Subject: ${encodeHeader(subject)}`,
-    `Message-ID: <${p.id}@aurry.cz>`,
-    'MIME-Version: 1.0',
-    'Content-Type: text/html; charset=utf-8',
-    'Content-Transfer-Encoding: base64',
-  ].filter(Boolean);
+  const metals = DATA.metals.map(m => ({
+    code: m.code,
+    price_buy: document.getElementById('buy_' + m.code).value,
+    price_pawn: m.price_pawn
+  }));
 
-  const raw = headers.join('\r\n') + '\r\n\r\n' + b64Wrapped(buildEmailBody(p));
-  await env.EMAIL.send(new EmailMessage(MAIL_FROM, MAIL_TO, raw));
-}
-
-// ---------------------------------------------------------------- PŘEDOBJEDNÁVKA
-
-function makeRef() {
-  const d = new Date();
-  const stamp = d.toISOString().slice(2, 10).replace(/-/g, '');
-  const rnd = Math.floor(1000 + Math.random() * 9000);
-  return `PO-${stamp}-${rnd}`;
-}
-
-async function handlePreorder(request, env) {
-  let body;
-  try {
-    body = await request.json();
-  } catch {
-    return json({ error: 'Neplatný požadavek' }, 400);
-  }
-
-  if (body.website) return json({ error: 'Odeslání se nezdařilo' }, 400);
-
-  const name = String(body.name || '').trim();
-  const phone = String(body.phone || '').trim();
-  const email = String(body.email || '').trim();
-  const note = String(body.note || '').trim().slice(0, 1000);
-
-  if (name.length < 2) return json({ error: 'Vyplňte jméno a příjmení' }, 400);
-  if (phone.replace(/\D/g, '').length < 9) return json({ error: 'Vyplňte platné telefonní číslo' }, 400);
-  if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return json({ error: 'Neplatný e-mail' }, 400);
-
-  const ip = request.headers.get('cf-connecting-ip') || '';
-
-  if (ip) {
-    const recent = await env.DB.prepare(
-      "SELECT COUNT(*) AS n FROM preorders WHERE client_ip = ? AND created_at > datetime('now','-1 hour')"
-    ).bind(ip).first();
-    if (recent && recent.n >= 5) {
-      return json({ error: 'Příliš mnoho požadavků. Zkuste to prosím později.' }, 429);
-    }
-  }
-
-  const pricing = await loadPricing(env.DB);
-  const m = pricing.metals.find((x) => x.code === body.metal);
-  if (!m) return json({ error: 'Neznámý kov' }, 400);
-
-  const w = Number(body.weight);
-  const p = Number(body.purity);
-  const n = Math.max(1, Math.floor(Number(body.pieces) || 1));
-  if (!Number.isFinite(w) || w <= 0) return json({ error: 'Neplatná hmotnost' }, 400);
-  if (!Number.isFinite(p) || p <= 0 || p > 1000) return json({ error: 'Neplatná ryzost' }, 400);
-
-  const mode = body.mode === 'pawn' ? 'pawn' : 'buy';
-  const refPrice = mode === 'pawn' ? m.price_pawn : m.price_buy;
-  const totalWeight = w * n;
-  const raw = calculateItemPrice(refPrice, m.ref_purity, p, totalWeight);
-  const price = roundPrice(raw, Number(pricing.settings.rounding || 1));
-
-  const record = {
-    id: crypto.randomUUID(),
-    ref: makeRef(),
-    created_at: new Date().toISOString().slice(0, 16).replace('T', ' '),
-    name, phone, email, note,
-    metal_code: m.code,
-    metal_name: m.name,
-    purity: p,
-    weight: totalWeight,
-    pieces: n,
-    mode,
-    price,
-    price_per_gram: Number((refPrice / m.ref_purity * p).toFixed(2)),
-  };
-
-  await env.DB.prepare(
-    `INSERT INTO preorders (id, ref, name, phone, email, note, metal_code, metal_name,
-      purity, weight, pieces, mode, price, price_per_gram, client_ip)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
-  ).bind(
-    record.id, record.ref, record.name, record.phone, record.email || null,
-    record.note || null, record.metal_code, record.metal_name, record.purity,
-    record.weight, record.pieces, record.mode, record.price, record.price_per_gram, ip
-  ).run();
-
-  let emailStatus = 'SENT';
-  let emailError = null;
-  try {
-    await sendPreorderEmail(env, record);
-  } catch (err) {
-    emailStatus = 'FAILED';
-    emailError = String(err).slice(0, 500);
-  }
-
-  await env.DB.prepare(
-    'UPDATE preorders SET email_status = ?, email_error = ? WHERE id = ?'
-  ).bind(emailStatus, emailError, record.id).run();
-
-  return json({
-    ok: true,
-    ref: record.ref,
-    price: record.price,
-    created_at: record.created_at,
+  const res = await fetch('/api/admin/metals', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'x-admin-key': key },
+    body: JSON.stringify({ metals })
   });
+
+  const d = await res.json();
+  msg.textContent = res.ok ? 'Ceny byly uloženy.' : (d.error || 'Uložení se nezdařilo.');
+  msg.style.color = res.ok ? '#006039' : '#a00';
+  if (res.ok) boot();
 }
 
-async function handlePreorderList(request, env) {
-  if (!isAdmin(request, env)) return json({ error: 'Nepovolený přístup' }, 403);
-  const rows = await env.DB.prepare(
-    `SELECT ref, created_at, name, phone, email, metal_name, purity, weight,
-            mode, price, status, email_status
-     FROM preorders ORDER BY created_at DESC LIMIT 100`
-  ).all();
-  return json({ preorders: rows.results });
-}
-
-async function handleAdminSave(request, env) {
-  if (!isAdmin(request, env)) return json({ error: 'Nepovolený přístup' }, 403);
-
-  let body;
-  try {
-    body = await request.json();
-  } catch {
-    return json({ error: 'Neplatný požadavek' }, 400);
-  }
-
-  const statements = [];
-  for (const m of body.metals || []) {
-    const buy = Number(m.price_buy);
-    const pawn = Number(m.price_pawn);
-    if (!Number.isFinite(buy) || buy < 0) return json({ error: `Neplatná cena u ${m.code}` }, 400);
-    if (!Number.isFinite(pawn) || pawn < 0) return json({ error: `Neplatná cena u ${m.code}` }, 400);
-
-    statements.push(
-      env.DB.prepare(
-        "UPDATE metals SET price_buy = ?, price_pawn = ?, updated_at = datetime('now') WHERE code = ?"
-      ).bind(buy, pawn, m.code)
-    );
-  }
-
-  if (statements.length) await env.DB.batch(statements);
-  return json({ ok: true });
-}
-
-// ---------------------------------------------------------------- ROUTER
-
-export default {
-  async fetch(request, env) {
-    const url = new URL(request.url);
-    const path = url.pathname;
-
-    try {
-      if (path === '/api/pricing') {
-        return json(await loadPricing(env.DB));
-      }
-
-      if (path === '/api/calculate' && request.method === 'POST') {
-        return handleCalculate(request, env);
-      }
-
-      if (path === '/api/preorder' && request.method === 'POST') {
-        return handlePreorder(request, env);
-      }
-
-      if (path === '/api/admin/preorders') {
-        return handlePreorderList(request, env);
-      }
-
-      if (path === '/api/admin/metals' && request.method === 'POST') {
-        return handleAdminSave(request, env);
-      }
-
-      if (path === '/admin') {
-        return new Response(ADMIN_HTML, {
-          headers: { 'content-type': 'text/html; charset=utf-8' },
-        });
-      }
-
-      if (path === '/') {
-        return new Response(PUBLIC_HTML, {
-          headers: { 'content-type': 'text/html; charset=utf-8' },
-        });
-      }
-
-      return new Response('Stránka nenalezena', { status: 404 });
-    } catch (err) {
-      return json({ error: 'Chyba serveru', detail: String(err) }, 500);
-    }
-  },
-};
+boot();
+</script>
+</body>
+</html>`;
