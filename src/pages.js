@@ -17,8 +17,9 @@ export const PUBLIC_HTML = `<!doctype html>
 </style>
 </head>
 <body>
-<header><div class="wrap"><div class="logo">Zlato Aurelius</div></div></header>
-<main><div class="wrap">
+<header><div class="wrap"><a href="https://www.aurry.cz"><img class="logo-img"
+src="https://www.aurry.cz/user/documents/upload/Loga/WhiteandBlack.jpg" 
+alt="Zlato Aurelius"></a></div></header>
   <h1>Kalkulačka ceny výkupu zlata</h1>
   <p class="lead">Vyberte ryzost, zadejte hmotnost a stiskněte Vypočítat cenu.</p>
 
