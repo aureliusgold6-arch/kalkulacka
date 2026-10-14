@@ -243,6 +243,8 @@ export const ADMIN_HTML = `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Nastavení cen – Zlato AURRY</title>
+<link rel="icon" type="image/jpeg" href="${FAVICON_URL}">
+<link rel="apple-touch-icon" href="${FAVICON_URL}">
 <style>${STYLES}</style>
 </head>
 <body>
