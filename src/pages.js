@@ -11,6 +11,8 @@ export const PUBLIC_HTML = `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Kalkulačka výkupu zlata – Zlato Aurry</title>
+<link rel="icon" type="image/jpeg" href="${FAVICON_URL}">
+<link rel="apple-touch-icon" href="${FAVICON_URL}">
 <style>${STYLES}
   .perGram { font-size: 14px; color: #555; margin-top: 10px; }
   .big { width: 100%; }
