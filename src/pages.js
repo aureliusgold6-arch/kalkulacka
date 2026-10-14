@@ -4,7 +4,7 @@ import { STYLES } from './styles.js';
 
 const GDPR_URL = 'https://www.aurry.cz/podminky-ochrany-osobnich-udaju/';
 const LOGO_URL = 'https://www.aurry.cz/user/documents/upload/Loga/WhiteandBlack.jpg';
-
+const FAVICON_URL = 'https://www.aurry.cz/user/documents/upload/Produkty/AU-favicon.jpg';
 export const PUBLIC_HTML = `<!doctype html>
 <html lang="cs">
 <head>
