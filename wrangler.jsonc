@@ -14,7 +14,7 @@
   "send_email": [
     {
       "name": "EMAIL",
-      "allowed_destination_addresses": ["info@aurry.cz", "nick.epif@gmail.com"]
+      "allowed_destination_addresses": ["aureliusgold6@gmail.com"]
     }
   ]
 }
