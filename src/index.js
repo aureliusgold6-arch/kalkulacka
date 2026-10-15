@@ -140,7 +140,6 @@ function buildEmailBody(p) {
     ${row('Kov', p.metal_name)}
     ${row('Ryzost', p.purity)}
     ${row('Hmotnost', p.weight + ' g')}
-    ${row('Počet kusů', p.pieces)}
     ${row('Cena za gram', p.price_per_gram + ' Kč')}
   </table>
 
