@@ -5,6 +5,7 @@ import { STYLES } from './styles.js';
 const GDPR_URL = 'https://www.aurry.cz/podminky-ochrany-osobnich-udaju/';
 const LOGO_URL = 'https://www.aurry.cz/user/documents/upload/Loga/WhiteandBlack.jpg';
 const FAVICON_URL = 'https://www.aurry.cz/user/documents/upload/Produkty/AU-favicon.jpg';
+
 export const PUBLIC_HTML = `<!doctype html>
 <html lang="cs">
 <head>
@@ -35,15 +36,9 @@ export const PUBLIC_HTML = `<!doctype html>
     <select id="purity" onchange="reset()"></select>
   </div>
 
-  <div class="row">
-    <div class="field">
-      <label for="weight">Hmotnost (g)</label>
-      <input id="weight" type="number" step="0.01" min="0" inputmode="decimal" placeholder="0,00" oninput="reset()">
-    </div>
-    <div class="field">
-      <label for="pieces">Počet kusů</label>
-      <input id="pieces" type="number" step="1" min="1" value="1" oninput="reset()">
-    </div>
+  <div class="field">
+    <label for="weight">Hmotnost (g)</label>
+    <input id="weight" type="number" step="0.01" min="0" inputmode="decimal" placeholder="0,00" oninput="reset()">
   </div>
 
   <button class="primary big" id="calcBtn" onclick="doCalc()">Vypočítat cenu</button>
@@ -151,7 +146,6 @@ async function doCalc() {
       metal: document.getElementById('metal').value,
       purity: document.getElementById('purity').value,
       weight: weight,
-      pieces: document.getElementById('pieces').value,
       mode: MODE
     })
   });
@@ -205,7 +199,6 @@ async function sendPreorder() {
         metal: document.getElementById('metal').value,
         purity: document.getElementById('purity').value,
         weight: document.getElementById('weight').value,
-        pieces: document.getElementById('pieces').value,
         mode: MODE
       })
     });
